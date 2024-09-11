@@ -1,0 +1,11 @@
+# Macro file for PRadSim
+#
+# To be run preferably in batch, without graphics:
+# % PRadSim run.mac
+#
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfWorkers 4
+#
+
+/run/initialize
+/run/beamOn 500

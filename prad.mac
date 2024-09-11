@@ -1,0 +1,41 @@
+# Macro file for PRadSim
+# 
+# To be run preferably in batch, without graphics:
+# % PRadSim run.mac
+#
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfWorkers 4
+#
+
+#/tracking/verbose 1
+
+#/pradsim/phys/add emstandard_opt1
+
+/pradsim/gun/type file
+/pradsim/gun/evtype elastic
+/pradsim/gun/path output/newep_2200MeV_3e5_theta_0.4_8.5_FF3_CO_1000_noTPE_1_e-.dat
+
+#/pradsim/phys/stepmax 10 mm
+/pradsim/gun/ebeam 2200.00 MeV
+#/pradsim/det/hycal wrapped
+
+#/pradsim/gun/target database/a34p51_extended.dat 
+
+#target material 'hydrogen' for gas hydrogen (default), 'LH2' for liquid hydrogen
+/pradsim/det/target/material hydrogen
+
+#radius of the target cell, in mm
+/pradsim/det/target/radius 25.0 mm
+
+#half length of the target cell, in mm
+/pradsim/det/target/halfl 20.0 mm
+
+/pradsim/det/calorimeter/depthleadglass 1.25 m
+/pradsim/det/calorimeter/reflectance 0.99
+
+/pradsim/event/printmodulo 1000
+
+/pradsim/det/sensitive/virtual true
+
+/run/initialize
+/run/beamOn 600000

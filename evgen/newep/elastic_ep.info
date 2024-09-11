@@ -1,0 +1,12 @@
+beam energy:
+3500.000000 MeV
+polar angle range:
+0.400000 ~ 5.000000 deg
+photon energy range:
+1.000000 ~ 1500.000000 MeV
+angle acceptance (the solid angle):
+0.023756 steradian
+cross section (averaged over the solid angle):
+18201.824453 microbarn / steradian
+integrated luminosity:
+693.789188 inverse microbarn
