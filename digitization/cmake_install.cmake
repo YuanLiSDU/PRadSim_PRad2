@@ -1,4 +1,4 @@
-# Install script for directory: /home/liyuan/PRad/PRadSim_PRad2/digitization
+# Install script for directory: /home/liyuan/PRad/git_test/PRadSim_PRad2/digitization
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

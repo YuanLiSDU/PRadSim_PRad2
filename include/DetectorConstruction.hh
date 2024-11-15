@@ -110,7 +110,7 @@ private:
     G4String fTargetMat;
     G4double fTargetDensityRatio;
     
-    G4double fScintillatorDetCenter;
+    G4double fScintillatorSurface;
 
     G4int fRecoilDetNSeg;
     G4double fRecoilDetCenter;

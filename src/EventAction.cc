@@ -100,7 +100,7 @@ void EventAction::EndOfEventAction(const G4Event *evt)
 	    StandardHitsCollection *HitColl = (StandardHitsCollection *) HCE->GetHC(i);
 	    G4int nHits = HitColl->entries();
 	    if (nHits > 0){
-                if (ColName == "HCColl" || ColName == "GEMColl")  { // Hard-coded detector name in DetectorConstruction.cc
+                if (ColName == "HCColl" || ColName == "GEMColl" /*|| ColName == "SciVDColl"*/ || ColName == "SciColl")  { // Hard-coded detector name in DetectorConstruction.cc
                     WriteFlag = true;
                 }
 	    }

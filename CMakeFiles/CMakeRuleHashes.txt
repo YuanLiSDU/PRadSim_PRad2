@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+069087ed6b803228cd4491a6a2a21751 digitization/CMakeFiles/copy_exes

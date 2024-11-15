@@ -99,7 +99,7 @@ DetectorConstruction::DetectorConstruction(G4String conf) : G4VUserDetectorConst
     fTargetMat = "D2Gas";
     fTargetDensityRatio = 1.0;
 
-    fScintillatorDetCenter = fTargetCenter + 31.3 * cm;
+    fScintillatorSurface = fTargetCenter + 31.3 * cm;
 
     fRecoilDetNSeg = 20;
     fRecoilDetCenter = fTargetCenter;
@@ -131,7 +131,7 @@ DetectorConstruction::DetectorConstruction(G4String conf) : G4VUserDetectorConst
     } else {
         fTargetSDOn = false;
         fRecoilDetSDOn = false;
-        fGEMSDOn = true;
+        fGEMSDOn = false;
         fSciPlaneSDOn = false;
         fHyCalSDOn = false;
         fVirtualSDOn = false;
@@ -540,23 +540,54 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
 
     //PRad Housing
     //imported from CAD
-    auto LighGuide = CADMesh::TessellatedMesh::FromSTL("CADmodel/LIGHT GUIDES OPERATING POSITION (Meshed).stl");
+    auto LighGuide = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/LIGHT_GUIDES_OPERATING.stl");
 	LighGuide->SetScale(1);											
 	LighGuide->SetOffset(0, 0, 0);										
-    auto logicalLighGuide = new G4LogicalVolume(LighGuide->GetSolid(), LightGuideM, "LighGuideLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalLighGuide, "LighGuide", logicWorld, false, 0);
+    G4LogicalVolume *logicalLighGuide = new G4LogicalVolume(LighGuide->GetSolid(), LightGuideM, "LighGuideLV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorSurface+12.*mm), logicalLighGuide, "LighGuide", logicWorld, false, 0);
 
-    auto Scintillator = CADMesh::TessellatedMesh::FromSTL("CADmodel/OPERATING POSITION SCINTILLATORS (Meshed).stl");
+    /*auto Scintillator = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/OPERATING_POSITION_SCINTILLATORS.stl");
 	Scintillator->SetScale(1);											
 	Scintillator->SetOffset(0, 0, 0);										
-    auto logicalScintillator = new G4LogicalVolume(Scintillator->GetSolid(), ScintillatorM, "ScintillatorLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalScintillator, "Scintillator", logicWorld, false, 0);
+    G4LogicalVolume *logicalScintillator = new G4LogicalVolume(Scintillator->GetSolid(), ScintillatorM, "ScintillatorLV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorSurface+12.*mm), logicalScintillator, "Scintillator", logicWorld, false, 0);*/
 
-    auto HOUSING = CADMesh::TessellatedMesh::FromSTL("CADmodel/PRAD HOUSING (Meshed).stl");
+    G4double SciPlaneHalfX = 32.5*mm;
+    G4double SciPlaneHalfY = 50.*mm;
+    G4double SciPlaneHalfZ = 2.5*mm;
+    G4double SciPlaneGap = 2.*mm;
+    G4Box *SolidSciPlane1 = new G4Box("SciPlane1S", SciPlaneHalfX, SciPlaneHalfY,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane1 = new G4LogicalVolume(SolidSciPlane1, ScintillatorM, "ScintillatorLV1");
+    new G4PVPlacement(0, G4ThreeVector(35.*mm+SciPlaneHalfX, 0, fScintillatorSurface+SciPlaneHalfZ), logicSciPlane1, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane2 = new G4Box("SciPlane2S", SciPlaneHalfX, SciPlaneHalfY,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane2 = new G4LogicalVolume(SolidSciPlane2, ScintillatorM, "ScintillatorLV2");
+    new G4PVPlacement(0, G4ThreeVector(-35.*mm-SciPlaneHalfX, 0, fScintillatorSurface+SciPlaneHalfZ), logicSciPlane2, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane3 = new G4Box("SciPlane3S", SciPlaneHalfY, SciPlaneHalfX,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane3 = new G4LogicalVolume(SolidSciPlane3, ScintillatorM, "ScintillatorLV3");
+    new G4PVPlacement(0, G4ThreeVector(0, 35.*mm+SciPlaneHalfX, fScintillatorSurface+3.*SciPlaneHalfZ+SciPlaneGap), logicSciPlane3, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane4 = new G4Box("SciPlane4S", SciPlaneHalfY, SciPlaneHalfX,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane4 = new G4LogicalVolume(SolidSciPlane4, ScintillatorM, "ScintillatorLV4");
+    new G4PVPlacement(0, G4ThreeVector(0, -35.*mm-SciPlaneHalfX, fScintillatorSurface+3.*SciPlaneHalfZ+SciPlaneGap), logicSciPlane4, "Scintillator", logicWorld, false, 0);
+    
+    G4Box *SolidSciVD1 = new G4Box("SciVD1S", SciPlaneHalfX, SciPlaneHalfY,0.01*mm);
+    G4LogicalVolume * logicSciVD1 = new G4LogicalVolume(SolidSciVD1, DefaultM, "SciVDLV1");
+    new G4PVPlacement(0, G4ThreeVector(35.*mm+SciPlaneHalfX, 0, fScintillatorSurface-0.05*mm), logicSciVD1, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD2 = new G4Box("SciVD2S", SciPlaneHalfX, SciPlaneHalfY,0.01*mm);
+    G4LogicalVolume * logicSciVD2 = new G4LogicalVolume(SolidSciVD2, DefaultM, "SciVDLV2");
+    new G4PVPlacement(0, G4ThreeVector(-35.*mm-SciPlaneHalfX, 0, fScintillatorSurface+-0.05*mm), logicSciVD2, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD3 = new G4Box("SciVD3S", SciPlaneHalfY, SciPlaneHalfX,0.01*mm);
+    G4LogicalVolume * logicSciVD3 = new G4LogicalVolume(SolidSciVD3, DefaultM, "SciVDLV3");
+    new G4PVPlacement(0, G4ThreeVector(0, 35.*mm+SciPlaneHalfX, fScintillatorSurface+2.*SciPlaneHalfZ+SciPlaneGap-0.05*mm), logicSciVD3, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD4 = new G4Box("SciVD4S", SciPlaneHalfY, SciPlaneHalfX,0.01*mm);
+    G4LogicalVolume * logicSciVD4 = new G4LogicalVolume(SolidSciVD4, DefaultM, "SciVDLV4");
+    new G4PVPlacement(0, G4ThreeVector(0, -35.*mm-SciPlaneHalfX, fScintillatorSurface+2.*SciPlaneHalfZ+SciPlaneGap-0.05*mm), logicSciVD4, "SciVD", logicWorld, false, 0);
+    
+
+    auto HOUSING = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/PRad_Housing.stl");
 	HOUSING->SetScale(1);											
 	HOUSING->SetOffset(0, 0, 0);										
-    auto logicalHOUSING = new G4LogicalVolume(HOUSING->GetSolid(), HouseM, "HOUSING_LV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalHOUSING, "HOUSING", logicWorld, false, 0);
+    G4LogicalVolume *logicalHOUSING = new G4LogicalVolume(HOUSING->GetSolid(), HouseM, "HOUSING_LV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorSurface+12.*mm), logicalHOUSING, "HOUSING", logicWorld, false, 0);
 
     // Center of two GEM should be at -3000.0 + 89.0 + (5226.16 + 5186.45) / 2 + 4.6525 = 2299.9575 mm // (5226.16 + 5186.45) / 2 from Weizhi
     //fGEMCenter[0] = 229.99575 * cm;
@@ -627,7 +658,10 @@ void DetectorConstruction::DefinePRadSDs()
     if (fSciDetectorSDOn) {
         StandardDetectorSD *SciDetectorSD = new StandardDetectorSD("SciDetectorSD", "Sci");
         G4SDManager::GetSDMpointer()->AddNewDetector(SciDetectorSD);
-        SetSensitiveDetector("ScintillatorLV",SciDetectorSD);
+        for(int i=1; i<5; i++){
+            SetSensitiveDetector(Form("ScintillatorLV%d",i),SciDetectorSD);
+        }
+        //SetSensitiveDetector("ScintillatorLV",SciDetectorSD);
     }
 
     if (fVirtualSDOn) {
@@ -636,6 +670,11 @@ void DetectorConstruction::DefinePRadSDs()
         SetSensitiveDetector("VirtualDetLV", VirtualSD);
     }
 
+    StandardDetectorSD *SciVirtualSD = new StandardDetectorSD("SciVirtualSD", "SciVD");
+    G4SDManager::GetSDMpointer()->AddNewDetector(SciVirtualSD);
+    for(int i=1;i<5;i++){
+        SetSensitiveDetector(Form("SciVDLV%d",i), SciVirtualSD);
+    }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -908,8 +947,8 @@ void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother)
     G4double zPlaneDC[] = {0, 32.83 * cm, 32.83 * cm, 35.37 * cm, 35.37 * cm, 71.00 * cm};
     G4VSolid *solidDownChamber = new G4Polycone("DownstreamChamberS", 0, twopi, 6, zPlaneDC, rInnerDC, rOuterDC);
     //G4LogicalVolume *logicDownChamber = new G4LogicalVolume(solidDownChamber, ChamberM, "DownstreamChamberLV");
-    G4Tubs *scintillatorTube = new G4Tubs("sTube", 0, 10.*cm, 92.2*mm*0.5+0.1*mm, 0, twopi);
-    G4SubtractionSolid *solidDownChamber2 = new G4SubtractionSolid("DownstreamChamberS1", solidDownChamber, scintillatorTube, 0, G4ThreeVector(0, 0, fScintillatorDetCenter-fDownChamberCenter+DownChamberHalfL-0.35*mm+12.*mm));
+    G4Tubs *scintillatorTube = new G4Tubs("sTube", 0, 30.*cm, 92.2*mm*0.5+0.1*mm, 0, twopi);
+    G4SubtractionSolid *solidDownChamber2 = new G4SubtractionSolid("DownstreamChamberS1", solidDownChamber, scintillatorTube, 0, G4ThreeVector(0, 0, fScintillatorSurface-fDownChamberCenter+DownChamberHalfL-0.35*mm+12.*mm));
     G4LogicalVolume *logicDownChamber = new G4LogicalVolume(solidDownChamber2, ChamberM, "DownstreamChamberLV");
     new G4PVPlacement(0, G4ThreeVector(0, 0, fDownChamberCenter - DownChamberHalfL), logicDownChamber, "Downstream Chamber", mother, false, 0);
 
