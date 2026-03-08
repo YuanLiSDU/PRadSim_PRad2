@@ -80,6 +80,9 @@ protected:
     double fX[MaxNHits];
     double fY[MaxNHits];
     double fZ[MaxNHits];
+    double fXOut[MaxNHits];
+    double fYOut[MaxNHits];
+    double fZOut[MaxNHits];
     double fMomentum[MaxNHits];
     double fTheta[MaxNHits];
     double fPhi[MaxNHits];

@@ -67,7 +67,8 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 //static const G4double ZCRFrontSurf = 273.515 * cm;
-static const G4double ZCRFrontSurf = (295.00 + 0.0) * cm;
+//static const G4double ZCRFrontSurf = (295.00 + 0.0) * cm;
+static const G4double ZCRFrontSurf = 6225.522 * mm + -300.0 * cm + 89.0 * mm;
 //static const G4double ZCRBackSurf = ZCRFrontSurf + 18.0 * cm;
 static const G4double ZLGFrontSurf = ZCRFrontSurf - 9.73 * cm;
 static const G4double ZLGBackSurf = ZLGFrontSurf + 45.0 * cm;

@@ -75,6 +75,8 @@ public:
 
     inline void SetExtDensityRatio(G4double r);
 
+    inline void EnableHeBag(G4bool turn);
+
     inline void EnableSD(G4String detname);
     inline void DisableSD(G4String detname);
 
@@ -93,7 +95,7 @@ private:
     G4VPhysicalVolume *DefineTestVolumes();
     void DefineTestSDs();
 
-    void AddVaccumBox(G4LogicalVolume *mother);
+    void AddVaccumBox(G4LogicalVolume *mother, bool UseHeBag);
     void AddGEM(G4LogicalVolume *mother, int layerid, bool culess);
     void AddHyCal(G4LogicalVolume *mother);
 
@@ -110,7 +112,7 @@ private:
     G4String fTargetMat;
     G4double fTargetDensityRatio;
     
-    G4double fScintillatorDetCenter;
+    G4double ScintillatorHouseCenter;
 
     G4int fRecoilDetNSeg;
     G4double fRecoilDetCenter;
@@ -121,6 +123,7 @@ private:
 
     G4double fDownChamberCenter;
     G4double fVacBoxCenter;
+    G4bool fUseHeBag;
 
     G4double fGEMCenter[10];
 
@@ -137,6 +140,7 @@ private:
     G4bool fHyCalSDOn;
     G4bool fVirtualSDOn;
     G4bool fSciDetectorSDOn;
+    G4bool fSciVirtualSDOn;
 
     G4double fAttenuationLG;
     G4double fReflectanceLG;
@@ -204,6 +208,11 @@ inline void DetectorConstruction::SetTargetDensityRatio(G4double r)
 inline void DetectorConstruction::SetExtDensityRatio(G4double r)
 {
     fExtDensityRatio = r;
+}
+
+inline void DetectorConstruction::EnableHeBag(G4bool turn)
+{
+    fUseHeBag = turn;
 }
 
 inline void DetectorConstruction::EnableSD(G4String detname)

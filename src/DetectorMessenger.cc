@@ -145,6 +145,10 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction *det) : G4UImessenger(
     ExtDensityRatioCmd->SetGuidance("Set fExtDensityRatio");
     ExtDensityRatioCmd->SetParameterName("extr", false);
 
+    HeBag_smallWin_Cmd = new G4UIcmdWithABool("/pradsim/det/vacuumAndPipe", this);
+    HeBag_smallWin_Cmd->SetGuidance("Use small vacuum window and HeBag, or old configuration");
+    HeBag_smallWin_Cmd->SetParameterName("usehebag", false);
+
     SDDir = new G4UIdirectory("/pradsim/det/sensitive/");
     SDDir->SetGuidance("Sensitive detector control");
 
@@ -220,6 +224,7 @@ DetectorMessenger::~DetectorMessenger()
     delete ZDir;
     delete DetDir;
     delete PRadSimDir;
+    delete HeBag_smallWin_Cmd;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -274,6 +279,9 @@ void DetectorMessenger::SetNewValue(G4UIcommand *command, G4String newValue)
     if (command == ExtDensityRatioCmd)
         Detector->SetExtDensityRatio(ExtDensityRatioCmd->GetNewDoubleValue(newValue));
 
+    if (command == HeBag_smallWin_Cmd)
+        Detector->EnableHeBag(HeBag_smallWin_Cmd->GetNewBoolValue(newValue));
+    
     if (command == TargetSDCmd) {
         if (TargetSDCmd->GetNewBoolValue(newValue)) Detector->EnableSD("Target");
         else Detector->DisableSD("Target");

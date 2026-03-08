@@ -20,19 +20,23 @@
 /pradsim/gun/gunpid e-
 
 #energy of the incident particle
-/pradsim/gun/ebeam 2200 MeV
+/pradsim/gun/ebeam 700 MeV
 
 #frequency of printing out current event number
-/pradsim/event/printmodulo 100000
+/pradsim/event/printmodulo 1000
 
 #turn it on for beam-on-target simulation, only record event if there is at least a hit on detector
 /pradsim/event/onlyrecordhits true
 
-/pradsim/det/sensitive/virtual true
+/pradsim/det/sensitive/virtual false
 
 /pradsim/det/sensitive/target true
+
+#trun it on to use He bag same as X17, turn off to use the old metal vaccum pipe, the defalut is false
+#always use X17 small vacuum window
+/pradsim/det/vacuumAndPipe false
 
 /run/initialize
 
 # the amount of event we want to run
-/run/beamOn 1000000
+/run/beamOn 500000000

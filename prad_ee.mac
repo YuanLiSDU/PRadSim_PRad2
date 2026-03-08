@@ -1,0 +1,47 @@
+# Macro file for PRadSim
+# 
+# To be run preferably in batch, without graphics:
+# % PRadSim run.mac
+#
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfWorkers 4
+#
+
+#/tracking/verbose 1
+
+#/pradsim/phys/add emstandard_opt1
+
+/pradsim/gun/type file
+#/pradsim/gun/evtype elastic
+#/pradsim/gun/path output/test.dat
+/pradsim/gun/evtype moller
+/pradsim/gun/path output/ee_pass6_700.00MeV_100000_theta_0.5_9.5_COMIN_1_COMAX_690_total_e-_0.005nb^-1.dat
+
+#/pradsim/phys/stepmax 10 mm
+/pradsim/gun/ebeam 700.00 MeV
+#/pradsim/det/hycal wrapped
+
+#/pradsim/gun/target database/a34p51_extended.dat 
+
+#target material 'hydrogen' for gas hydrogen (default), 'LH2' for liquid hydrogen
+/pradsim/det/target/material hydrogen
+
+#radius of the target cell, in mm
+/pradsim/det/target/radius 25.0 mm
+
+#half length of the target cell, in mm
+/pradsim/det/target/halfl 20.0 mm
+
+/pradsim/det/calorimeter/depthleadglass 1.25 m
+/pradsim/det/calorimeter/reflectance 0.99
+
+/pradsim/event/printmodulo 1000
+
+/pradsim/det/sensitive/virtual true
+
+#trun it on to use He bag same as X17, turn off to use the old metal vaccum pipe, the defalut is false
+#always use X17 small vacuum window
+/pradsim/det/vacuumAndPipe false
+
+/run/initialize
+/run/beamOn 1000000

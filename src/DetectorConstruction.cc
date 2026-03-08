@@ -99,7 +99,7 @@ DetectorConstruction::DetectorConstruction(G4String conf) : G4VUserDetectorConst
     fTargetMat = "D2Gas";
     fTargetDensityRatio = 1.0;
 
-    fScintillatorDetCenter = fTargetCenter + 31.3 * cm;
+    ScintillatorHouseCenter = fTargetCenter + 308.38 * mm;
 
     fRecoilDetNSeg = 20;
     fRecoilDetCenter = fTargetCenter;
@@ -110,13 +110,14 @@ DetectorConstruction::DetectorConstruction(G4String conf) : G4VUserDetectorConst
 
     fDownChamberCenter = fTargetCenter + 74.0 * mm + 71.0 * cm / 2.0;
     fVacBoxCenter = fTargetCenter + 74.0 * mm + 71.0 * cm + 425.17 * cm / 2.0;
+    fUseHeBag = false;
 
-    fGEMCenter[0] = 217.5 * cm;
-    fGEMCenter[1] = (257.5 + 0.0) * cm;
+    fGEMCenter[0] =  5407. * mm + fTargetCenter;
+    fGEMCenter[1] =  5807. * mm + fTargetCenter;
 
     fSciPlaneCenter = 262.5 * cm;
 
-    fCrystalSurf = (295.0 + 0.0) * cm;
+    fCrystalSurf = 6225.522 * mm + fTargetCenter;
 
     fExtDensityRatio = 1.0;
 
@@ -133,9 +134,10 @@ DetectorConstruction::DetectorConstruction(G4String conf) : G4VUserDetectorConst
         fRecoilDetSDOn = false;
         fGEMSDOn = true;
         fSciPlaneSDOn = false;
-        fHyCalSDOn = false;
-        fVirtualSDOn = false;
+        fHyCalSDOn = true;
+        fVirtualSDOn = true;
         fSciDetectorSDOn = true;
+        fSciVirtualSDOn = false;
     }
 
     fAttenuationLG = 0.0;
@@ -232,18 +234,18 @@ void DetectorConstruction::DefineMaterials()
     // Space Vacuum
     G4Material *Galaxy = new G4Material("Galaxy", density = universe_mean_density, ncomponents = 1, kStateGas, 0.1 * kelvin, 1.0e-19 * pascal);
     Galaxy->AddElement(H, fractionmass = 1.0);
-    fVisAtts[Galaxy->GetName()] = new G4VisAttributes(G4VisAttributes::Invisible);
+    fVisAtts[Galaxy->GetName()] = new G4VisAttributes(G4VisAttributes::GetInvisible());
 
     // Air
     G4Material *Air = new G4Material("Air", density = 1.292 * mg / cm3, ncomponents = 2);
     Air->AddElement(N, fractionmass = 0.7);
     Air->AddElement(O, fractionmass = 0.3);
-    fVisAtts[Air->GetName()] = new G4VisAttributes(G4VisAttributes::Invisible);
+    fVisAtts[Air->GetName()] = new G4VisAttributes(G4VisAttributes::GetInvisible());
 
     // Air vacuum of 1.e-6 torr at room temperature, 1 atmosphere = 760 torr
     G4Material *Vacuum = new G4Material("Vacuum", density = 1.0e-6 / 760.0 * 1.292 * mg / cm3, ncomponents = 1, kStateGas, STP_Temperature, 1.0e-6 / 760.0 * atmosphere);
     Vacuum->AddMaterial(Air, fractionmass = 1.0);
-    fVisAtts[Vacuum->GetName()] = new G4VisAttributes(G4VisAttributes::Invisible);
+    fVisAtts[Vacuum->GetName()] = new G4VisAttributes(G4VisAttributes::GetInvisible());
 
     // Hydrogen Gas (T = 19.5 K, P = 470 mTorr)
     G4Material *H2Gas = new G4Material("H2Gas", density = fTargetDensityRatio * 0.47 / 760.0 * 273.15 / 19.5 * 0.08988 * mg / cm3, ncomponents = 1, kStateGas, 19.5 * kelvin, fTargetDensityRatio * 0.47 / 760.0 * atmosphere);
@@ -282,6 +284,26 @@ void DetectorConstruction::DefineMaterials()
     fVisAtts[Kapton0d2->GetName()] = new G4VisAttributes(G4Colour::Brown());
     G4Material *Kapton0d8 = new G4Material("Kapton0.8", Kapton->GetDensity() * 0.8, Kapton);
     fVisAtts[Kapton0d8->GetName()] = new G4VisAttributes(G4Colour::Brown());
+    //fVisAtts[Kapton->GetName()]->SetForceSolid(true);
+
+    //Alumiized Kapton (5Al + 20Kapton)
+    G4Material *Aluminized_Kapton = new G4Material("Aluminized_Kapton", density = fExtDensityRatio * (1.42 * 4. + 2.700)/5. * g / cm3, ncomponents = 5);
+    Aluminized_Kapton->AddElement(H, fractionmass = 0.0273 * (1. - 2.700 / (1.42 * 4. + 2.700)));
+    Aluminized_Kapton->AddElement(C, fractionmass = 0.7213 * (1. - 2.700 / (1.42 * 4. + 2.700)));
+    Aluminized_Kapton->AddElement(N, fractionmass = 0.0765 * (1. - 2.700 / (1.42 * 4. + 2.700)));
+    Aluminized_Kapton->AddElement(O, fractionmass = 0.1749 * (1. - 2.700 / (1.42 * 4. + 2.700)));
+    Aluminized_Kapton->AddElement(Al, fractionmass = 2.700 / (1.42 * 4. + 2.700));
+    fVisAtts[Aluminized_Kapton->GetName()] = new G4VisAttributes(G4Colour::Blue());
+    //fVisAtts[Aluminized_Kapton->GetName()]->SetForceSolid(true);
+
+    //Honeycomb Nomex
+    G4Material *Nomex = new G4Material("Nomex", density = fExtDensityRatio * 0.04806 * g / cm3 , ncomponents = 4); // 3 lbs/ft^3
+    Nomex->AddElement(N, natoms = 2);
+    Nomex->AddElement(H, natoms = 10);
+    Nomex->AddElement(C, natoms = 14);
+    Nomex->AddElement(O, natoms = 2);
+    fVisAtts[Nomex->GetName()] = new G4VisAttributes(G4Colour::Red());
+    //fVisAtts[Nomex->GetName()]->SetForceSolid(true);
 
     // Silicon
     G4Material *Silicon = new G4Material("Silicon", density = 2.329 * g / cm3, ncomponents = 1);
@@ -346,6 +368,7 @@ void DetectorConstruction::DefineMaterials()
     G4Material *HeGas = new G4Material("HeGas", density = fExtDensityRatio * 0.1786e-3 * g / cm3, ncomponents = 1);
     HeGas->AddElement(He, natoms = 1);
     fVisAtts[HeGas->GetName()] = new G4VisAttributes(G4Colour::Cyan());
+    fVisAtts[HeGas->GetName()]->SetForceSolid(true);
 
     // Scintillator EJ204
     G4Material *EJ204 = new G4Material("EJ204", density = fExtDensityRatio * 1.032 * g / cm3, ncomponents = 2);
@@ -378,7 +401,7 @@ void DetectorConstruction::DefineMaterials()
     Polyester->AddElement(C, natoms = 10);
     Polyester->AddElement(H, natoms = 8);
     Polyester->AddElement(O, natoms = 4);
-    fVisAtts[Polyester->GetName()] = new G4VisAttributes(G4VisAttributes::Invisible);
+    fVisAtts[Polyester->GetName()] = new G4VisAttributes(G4VisAttributes::GetInvisible());
 
     // Brass
     G4Material *Brass = new G4Material("Brass", density = 8.53 * g / cm3, ncomponents = 2);
@@ -448,7 +471,6 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
     G4Material *UCollimatorM = G4Material::GetMaterial("Nickel");
     G4Material *VacuumTubeM = G4Material::GetMaterial("SSteel");
     G4Material *VirtualDetM = G4Material::GetMaterial("VirtualDetM");
-    //G4Material *HeBagM = G4Material::GetMaterial("HeGas");
     G4Material *HouseM = G4Material::GetMaterial("SSteel");
     G4Material *ScintillatorM = G4Material::GetMaterial("EJ204");
     G4Material *LightGuideM = G4Material::GetMaterial("PMMA");
@@ -506,7 +528,7 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
         new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicCell, "Target Cell", logicTargetCon, false, 0);
 
         // Target cell windows
-        G4double CellApertureR = 2.0 * mm;
+        G4double CellApertureR = 1.0 * mm; //be changed from 2.0 mm to correct 1.0mm
         G4double CellWinThickness = 7.5 * um;
         G4Box *CellWinBox = new G4Box("CellWinBox", CellXY, CellXY, CellWinThickness / 2.0);
         G4Tubs *CellWinTube = new G4Tubs("CellWinTube", 0, CellApertureR, CellWinThickness + 1.0 * mm, 0, twopi);
@@ -536,27 +558,61 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
     G4LogicalVolume *logicUBeamPipe = new G4LogicalVolume(solidUBeamPipe, VacuumTubeM, "UBeamPipeLV");
     new G4PVPlacement(0, G4ThreeVector(0, 0, UBeamPipeCenter), logicUBeamPipe, "Upstream Beam Pipe", logicWorld, false, 0);
 
-    AddVaccumBox(logicWorld);
+    AddVaccumBox(logicWorld, fUseHeBag);
 
     //PRad Housing
     //imported from CAD
-    auto LighGuide = CADMesh::TessellatedMesh::FromSTL("CADmodel/LIGHT GUIDES OPERATING POSITION (Meshed).stl");
-	LighGuide->SetScale(1);											
-	LighGuide->SetOffset(0, 0, 0);										
-    auto logicalLighGuide = new G4LogicalVolume(LighGuide->GetSolid(), LightGuideM, "LighGuideLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalLighGuide, "LighGuide", logicWorld, false, 0);
-
-    auto Scintillator = CADMesh::TessellatedMesh::FromSTL("CADmodel/OPERATING POSITION SCINTILLATORS (Meshed).stl");
-	Scintillator->SetScale(1);											
-	Scintillator->SetOffset(0, 0, 0);										
-    auto logicalScintillator = new G4LogicalVolume(Scintillator->GetSolid(), ScintillatorM, "ScintillatorLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalScintillator, "Scintillator", logicWorld, false, 0);
-
-    auto HOUSING = CADMesh::TessellatedMesh::FromSTL("CADmodel/PRAD HOUSING (Meshed).stl");
+    auto HOUSING = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/PRad_Housing.stl");
 	HOUSING->SetScale(1);											
 	HOUSING->SetOffset(0, 0, 0);										
-    auto logicalHOUSING = new G4LogicalVolume(HOUSING->GetSolid(), HouseM, "HOUSING_LV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fScintillatorDetCenter+12.*mm), logicalHOUSING, "HOUSING", logicWorld, false, 0);
+    G4LogicalVolume *logicalHOUSING = new G4LogicalVolume(HOUSING->GetSolid(), HouseM, "HOUSING_LV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, ScintillatorHouseCenter), logicalHOUSING, "HOUSING", logicWorld, false, 0);
+
+    /*auto LighGuide = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/LIGHT_GUIDES_OPERATING.stl");
+	LighGuide->SetScale(1);
+	LighGuide->SetOffset(0, 0, 0);
+    G4LogicalVolume *logicalLighGuide = new G4LogicalVolume(LighGuide->GetSolid(), LightGuideM, "LighGuideLV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, ScintillatorHouseCenter), logicalLighGuide, "LighGuide", logicWorld, false, 0);*/
+
+    /*auto Scintillator = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/OPERATING_POSITION_SCINTILLATORS.stl");
+	Scintillator->SetScale(1);											
+	Scintillator->SetOffset(0, 0, 0);										
+    G4LogicalVolume *logicalScintillator = new G4LogicalVolume(Scintillator->GetSolid(), ScintillatorM, "ScintillatorLV");
+    new G4PVPlacement(0, G4ThreeVector(0, 0, ScintillatorHouseCenter), logicalScintillator, "Scintillator", logicWorld, false, 0);*/
+
+    G4double SciPlaneHalfX = 32.5*mm;
+    G4double SciPlaneHalfY = 50.*mm;
+    G4double SciPlaneHalfZ = 1.5*mm;
+    G4double HorizontalCenter = fTargetCenter + 304.880 * mm;
+    G4double VerticalCenter = fTargetCenter + 311.880 * mm;
+    G4double SciPlaneHoleXY = 40.*mm;
+    G4double shiftX = 0. * mm, shiftY = 0. * mm;
+
+    G4Box *SolidSciPlane1 = new G4Box("SciPlane1S", SciPlaneHalfX, SciPlaneHalfY,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane1 = new G4LogicalVolume(SolidSciPlane1, ScintillatorM, "ScintillatorLV1");
+    new G4PVPlacement(0, G4ThreeVector(0.5*SciPlaneHoleXY+SciPlaneHalfX + shiftX, 0 + shiftY, HorizontalCenter), logicSciPlane1, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane2 = new G4Box("SciPlane2S", SciPlaneHalfX, SciPlaneHalfY,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane2 = new G4LogicalVolume(SolidSciPlane2, ScintillatorM, "ScintillatorLV2");
+    new G4PVPlacement(0, G4ThreeVector(-0.5*SciPlaneHoleXY-SciPlaneHalfX + shiftX, 0 + shiftY, HorizontalCenter), logicSciPlane2, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane3 = new G4Box("SciPlane3S", SciPlaneHalfY, SciPlaneHalfX,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane3 = new G4LogicalVolume(SolidSciPlane3, ScintillatorM, "ScintillatorLV3");
+    new G4PVPlacement(0, G4ThreeVector(0 + shiftX, 0.5*SciPlaneHoleXY+SciPlaneHalfX + shiftY, VerticalCenter), logicSciPlane3, "Scintillator", logicWorld, false, 0);
+    G4Box *SolidSciPlane4 = new G4Box("SciPlane4S", SciPlaneHalfY, SciPlaneHalfX,SciPlaneHalfZ);
+    G4LogicalVolume * logicSciPlane4 = new G4LogicalVolume(SolidSciPlane4, ScintillatorM, "ScintillatorLV4");
+    new G4PVPlacement(0, G4ThreeVector(0 + shiftX, -0.5*SciPlaneHoleXY-SciPlaneHalfX + shiftY, VerticalCenter), logicSciPlane4, "Scintillator", logicWorld, false, 0);
+    
+    G4Box *SolidSciVD1 = new G4Box("SciVD1S", SciPlaneHalfX, SciPlaneHalfY,0.001*mm);
+    G4LogicalVolume * logicSciVD1 = new G4LogicalVolume(SolidSciVD1, VirtualDetM, "SciVDLV1");
+    new G4PVPlacement(0, G4ThreeVector(0.5*SciPlaneHoleXY+SciPlaneHalfX + shiftX, 0 + shiftY, HorizontalCenter - SciPlaneHalfZ - 0.005*mm), logicSciVD1, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD2 = new G4Box("SciVD2S", SciPlaneHalfX, SciPlaneHalfY,0.001*mm);
+    G4LogicalVolume * logicSciVD2 = new G4LogicalVolume(SolidSciVD2, VirtualDetM, "SciVDLV2");
+    new G4PVPlacement(0, G4ThreeVector(-0.5*SciPlaneHoleXY-SciPlaneHalfX + shiftX, 0 + shiftY, HorizontalCenter - SciPlaneHalfZ - 0.005*mm), logicSciVD2, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD3 = new G4Box("SciVD3S", SciPlaneHalfY, SciPlaneHalfX,0.001*mm);
+    G4LogicalVolume * logicSciVD3 = new G4LogicalVolume(SolidSciVD3, VirtualDetM, "SciVDLV3");
+    new G4PVPlacement(0, G4ThreeVector(0 + shiftX, 0.5*SciPlaneHoleXY+SciPlaneHalfX + shiftY, VerticalCenter - SciPlaneHalfZ - 0.005*mm), logicSciVD3, "SciVD", logicWorld, false, 0);
+    G4Box *SolidSciVD4 = new G4Box("SciVD4S", SciPlaneHalfY, SciPlaneHalfX,0.001*mm);
+    G4LogicalVolume * logicSciVD4 = new G4LogicalVolume(SolidSciVD4, VirtualDetM, "SciVDLV4");
+    new G4PVPlacement(0, G4ThreeVector(0 + shiftX, -0.5*SciPlaneHoleXY-SciPlaneHalfX + shiftY, VerticalCenter - SciPlaneHalfZ - 0.005*mm), logicSciVD4, "SciVD", logicWorld, false, 0);
 
     // Center of two GEM should be at -3000.0 + 89.0 + (5226.16 + 5186.45) / 2 + 4.6525 = 2299.9575 mm // (5226.16 + 5186.45) / 2 from Weizhi
     //fGEMCenter[0] = 229.99575 * cm;
@@ -564,13 +620,6 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
 
     AddGEM(logicWorld, 0, false);
     AddGEM(logicWorld, 1, false);
-    
-    // He bag (Only He gas for now)
-    //G4Box *HeBagBox = new G4Box("HeBagBox", 1.0 * m, 1.0 * m, (fGEMCenter[1] - fGEMCenter[0] - 5.65 * cm) / 2.0 - 1*cm);
-    //G4Tubs *HeBagTube = new G4Tubs("HeBagTube", 0, 22.0 * mm, (fGEMCenter[1] - fGEMCenter[0] - 5.65 * cm + 1.0 * mm) / 2.0 - 1*cm, 0, twopi);
-    //G4SubtractionSolid *solidHeBag = new G4SubtractionSolid("HeBagS", HeBagBox, HeBagTube);
-    //G4LogicalVolume *logicHeBag = new G4LogicalVolume(solidHeBag, HeBagM, "HeBagLV");
-    //new G4PVPlacement(0, G4ThreeVector(0, 0, (fGEMCenter[0] + fGEMCenter[1]) / 2.0), logicHeBag, "He Bag", logicWorld, false, 0);
     
     // The crystal surface should be at -3000.0 + 89.0 + 5646.15 = 2735.15 mm // 5646.15 from Weizhi
     //fCrystalSurf = 273.515 * cm; // Surface of the PWO
@@ -605,10 +654,17 @@ void DetectorConstruction::DefinePRadSDs()
     }
 
     if (fGEMSDOn) {
+        //TrackingDetectorSD *GEM_CuSD = new TrackingDetectorSD("GEM_CuSD", "GEM_Cu");
+        //G4SDManager::GetSDMpointer()->AddNewDetector(GEM_CuSD);
+        //SetSensitiveDetector("GEM0CuReadLV1", GEM_CuSD);
+        //SetSensitiveDetector("GEM0CuReadLV2", GEM_CuSD);
+        //SetSensitiveDetector("GEM1CuReadLV1", GEM_CuSD);
+        //SetSensitiveDetector("GEM1CuReadLV2", GEM_CuSD);
+
         TrackingDetectorSD *GEMSD = new TrackingDetectorSD("GEMSD", "GEM");
         G4SDManager::GetSDMpointer()->AddNewDetector(GEMSD);
-        SetSensitiveDetector("GEM0CathodeLV", GEMSD);
-        SetSensitiveDetector("GEM1CathodeLV", GEMSD);
+        SetSensitiveDetector("GEM0DriftGasLV", GEMSD);
+        SetSensitiveDetector("GEM1DriftGasLV", GEMSD);
     }
 
     if (fHyCalSDOn) {
@@ -625,9 +681,17 @@ void DetectorConstruction::DefinePRadSDs()
     }
 
     if (fSciDetectorSDOn) {
-        StandardDetectorSD *SciDetectorSD = new StandardDetectorSD("SciDetectorSD", "Sci");
-        G4SDManager::GetSDMpointer()->AddNewDetector(SciDetectorSD);
-        SetSensitiveDetector("ScintillatorLV",SciDetectorSD);
+        StandardDetectorSD *SciDetectorSD1 = new StandardDetectorSD("SciDetectorSD1", "Sci1");
+        G4SDManager::GetSDMpointer()->AddNewDetector(SciDetectorSD1);
+        for(int i=1; i<3; i++){
+            SetSensitiveDetector(Form("ScintillatorLV%d",i),SciDetectorSD1);
+        }
+        StandardDetectorSD *SciDetectorSD2 = new StandardDetectorSD("SciDetectorSD2", "Sci2");
+        G4SDManager::GetSDMpointer()->AddNewDetector(SciDetectorSD2);
+        for(int i=3; i<5; i++){
+            SetSensitiveDetector(Form("ScintillatorLV%d",i),SciDetectorSD2);
+        }
+        //SetSensitiveDetector("ScintillatorLV",SciDetectorSD);
     }
 
     if (fVirtualSDOn) {
@@ -635,7 +699,14 @@ void DetectorConstruction::DefinePRadSDs()
         G4SDManager::GetSDMpointer()->AddNewDetector(VirtualSD);
         SetSensitiveDetector("VirtualDetLV", VirtualSD);
     }
-
+    
+    if (fSciVirtualSDOn){
+        StandardDetectorSD *SciVirtualSD = new StandardDetectorSD("SciVirtualSD", "SciVD");
+        G4SDManager::GetSDMpointer()->AddNewDetector(SciVirtualSD);
+        for(int i=1;i<5;i++){
+            SetSensitiveDetector(Form("SciVDLV%d",i), SciVirtualSD);
+        }
+    }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -730,7 +801,7 @@ G4VPhysicalVolume *DetectorConstruction::DefineDRadVolumes()
     new G4PVPlacement(0, G4ThreeVector(0, 0, RecoilDetCenter), logicRecoilDet2Cover, "Recoil Detector 2 Cover", logicTarget, false, 1);
     new G4PVPlacement(0, G4ThreeVector(0, 0, RecoilDetCenter), logicRecoilDet2, "Recoil Detector 2", logicTarget, false, 1);
 
-    AddVaccumBox(logicWorld);
+    AddVaccumBox(logicWorld, false);
 
     AddGEM(logicWorld, 0, true);
     AddGEM(logicWorld, 1, false);
@@ -881,15 +952,17 @@ void DetectorConstruction::DefineTestSDs()
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother)
+void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother, bool UseHeBag)
 {
     G4Material *ChamberM = G4Material::GetMaterial("Aluminum");
     G4Material *ChamberWindowM = G4Material::GetMaterial("Kapton");
     G4Material *VacuumBoxM = G4Material::GetMaterial("Aluminum");
     G4Material *VacuumTubeM = G4Material::GetMaterial("Aluminum");
-    G4Material *FlangeM1 = G4Material::GetMaterial("Aluminum");
-    G4Material *FlangeM2 = G4Material::GetMaterial("SSteel");
-    G4Material *FlangeM3 = G4Material::GetMaterial("Viton");
+    G4Material *HeTubeM = G4Material::GetMaterial("Kapton");
+    G4Material *WindowAndTubeM1 = G4Material::GetMaterial("Aluminum");
+    G4Material *WindowAndTubeM2 = G4Material::GetMaterial("SSteel");
+    G4Material *WindowAndTubeM3 = G4Material::GetMaterial("Viton");
+    G4Material *TubeGasM = G4Material::GetMaterial("HeGas");
 
     // Target chamber
     // For now, only built the downstream chamber with window
@@ -898,18 +971,18 @@ void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother)
     // The total length of the downstream chamber and the tube in total is 710.0 mm
     // Here the downstream chamber and the tube are built together to be the new downstream chamber.
     // So the center of this geometry should be at -2837.0 + 710.0 / 2 = -2482.0 mm
-    fDownChamberCenter = fTargetCenter + 74.0 * mm + 71.0 * cm / 2.0;
-    G4double DownChamberHalfL = 71.0 / 2.0 * cm;
+    fDownChamberCenter = fTargetCenter + 74.0 * mm + 71.0 * cm / 2.0 + 89.3 * mm / 2.;
+    G4double DownChamberHalfL = 71.0 / 2.0 * cm + 89.3 * mm / 2.;
     G4double DownChamberUR = 8.00 * cm;
 
     // Downstream chamber
     G4double rInnerDC[] = {7.56 * cm, 7.56 * cm, 7.56 * cm, 7.56 * cm, 17.30 * cm, 17.30 * cm};
     G4double rOuterDC[] = {8.00 * cm, 8.00 * cm, 17.78 * cm, 17.78 * cm, 17.78 * cm, 17.78 * cm};
-    G4double zPlaneDC[] = {0, 32.83 * cm, 32.83 * cm, 35.37 * cm, 35.37 * cm, 71.00 * cm};
+    G4double zPlaneDC[] = {0, 32.83 * cm, 32.83 * cm, 35.37 * cm, 35.37 * cm, 71.00 * cm + 89.3 * mm};
     G4VSolid *solidDownChamber = new G4Polycone("DownstreamChamberS", 0, twopi, 6, zPlaneDC, rInnerDC, rOuterDC);
     //G4LogicalVolume *logicDownChamber = new G4LogicalVolume(solidDownChamber, ChamberM, "DownstreamChamberLV");
-    G4Tubs *scintillatorTube = new G4Tubs("sTube", 0, 10.*cm, 92.2*mm*0.5+0.1*mm, 0, twopi);
-    G4SubtractionSolid *solidDownChamber2 = new G4SubtractionSolid("DownstreamChamberS1", solidDownChamber, scintillatorTube, 0, G4ThreeVector(0, 0, fScintillatorDetCenter-fDownChamberCenter+DownChamberHalfL-0.35*mm+12.*mm));
+    G4Tubs *scintillatorTube = new G4Tubs("sTube", 0, 30.*cm, 92.2*mm*0.5+0.1*mm, 0, twopi);
+    G4SubtractionSolid *solidDownChamber2 = new G4SubtractionSolid("DownstreamChamberS1", solidDownChamber, scintillatorTube, 0, G4ThreeVector(0, 0, ScintillatorHouseCenter-fDownChamberCenter+DownChamberHalfL -0.35*mm));
     G4LogicalVolume *logicDownChamber = new G4LogicalVolume(solidDownChamber2, ChamberM, "DownstreamChamberLV");
     new G4PVPlacement(0, G4ThreeVector(0, 0, fDownChamberCenter - DownChamberHalfL), logicDownChamber, "Downstream Chamber", mother, false, 0);
 
@@ -922,8 +995,7 @@ void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother)
 
     // Vacuum box
     // The length of the vacuum box is 4251.7 mm
-    // So the center of this geometry should be at -3000.0 + 89.0 + 74.0 + 710.0 + 2125.85 = -1.15 mm
-    fVacBoxCenter = fTargetCenter + 74.0 * mm + 71.0 * cm + 425.17 * cm / 2.0;
+    fVacBoxCenter = fTargetCenter + 5125. * mm - 425.17 * cm / 2.0;
     G4double VacBoxHalfL = 425.17 * cm / 2.0;
     G4double VacBoxMaxR = 78.11 * cm;
     G4double rInner2[] = {17.30 * cm, 17.30 * cm, 50.17 * cm, 50.17 * cm, 78.11 * cm, 78.11 * cm};
@@ -933,83 +1005,197 @@ void DetectorConstruction::AddVaccumBox(G4LogicalVolume *mother)
     G4LogicalVolume *logicVacBox = new G4LogicalVolume(solidVacBox, VacuumBoxM, "VacuumBoxLV");
     new G4PVPlacement(0, G4ThreeVector(0, 0, fVacBoxCenter - VacBoxHalfL), logicVacBox, "Vacuum Box", mother, false, 0);
 
-    // Vacuum box window
-    G4double VacBoxWinFlangeOffset = 3.81 * cm;
-    G4double ArcDistance = 5.59 * cm;
-    G4double ArcEndR = (ArcDistance * ArcDistance + VacBoxMaxR * VacBoxMaxR) / (2 * ArcDistance);
-    G4double ArcEndThickness = 1.6 * mm;
-    G4double VacBoxWinApertureR = 3.0 * cm;
-    G4VSolid *solidVacBoxWin = new G4Sphere("VacuumBoxWindowS", ArcEndR - ArcEndThickness, ArcEndR, 0, twopi, pi - asin(VacBoxMaxR / ArcEndR), asin(VacBoxMaxR / ArcEndR) - asin((VacBoxWinApertureR + 0.1 * mm) / ArcEndR));
-    G4LogicalVolume *logicVacBoxWin = new G4LogicalVolume(solidVacBoxWin, VacuumBoxM, "VacuumBoxWindowLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fVacBoxCenter + VacBoxHalfL + ArcEndR - ArcDistance - VacBoxWinFlangeOffset), logicVacBoxWin, "Vacuum Box Window", mother, false, 0);
+    if(!UseHeBag){
+        // Vacuum Tube 
+        //dimension from Bob and Eugene
+        G4double VacTubeOR = 1.375 * 2.54 * cm * 0.5; 
+        G4double VacTubeIR = VacTubeOR - 0.035 * 2.54 * cm;
+        G4double VacTubeL = 2387.6 * mm;
+        G4VSolid *solidVacTube = new G4Tubs("VacuumTubeS", VacTubeIR, VacTubeOR, VacTubeL / 2.0, 0, twopi);
+        G4LogicalVolume *logicVacTube = new G4LogicalVolume(solidVacTube, VacuumTubeM, "VacuumTubeLV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, fTargetCenter + 6469.06 * mm), logicVacTube, "Vacuum Tube", mother, false, 0);
 
-    // Vacuum Tube
-    G4double VacTubeOR = 1.75 * cm; //previous 1.9 cm, 1.375 in = 1.75cm
-    G4double VacTubeIR = VacTubeOR - 0.0889 * cm; // 0.049 in = 0.12446 cm from Eugene, 0.035 in = 0.0889 cm for Al pipe
-    G4double VacTubeL = fWorldSizeZ - 10.0 * cm - fVacBoxCenter - VacBoxHalfL + ArcDistance + VacBoxWinFlangeOffset - (34.6+4.0+1.5)*2.*mm; //The last is the lenth of flange
-    G4VSolid *solidVacTube = new G4Tubs("VacuumTubeS", VacTubeIR, VacTubeOR, VacTubeL / 2.0, 0, twopi);
-    G4LogicalVolume *logicVacTube = new G4LogicalVolume(solidVacTube, VacuumTubeM, "VacuumTubeLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, fWorldSizeZ - 10.0 * cm - VacTubeL / 2.0), logicVacTube, "Vacuum Tube", mother, false, 0);
+        G4double move = -1280. * mm;
 
-    //Flange
-    G4double FlangeCenter = fVacBoxCenter + VacBoxHalfL - ArcDistance - VacBoxWinFlangeOffset + (34.6*mm + 4.0*mm + 1.5*mm);//The last is the half lenth of flange
-    //center ring
-    G4double RingID = 40.0 * mm;
-    G4double RingMD = RingID + 0.5 * mm; //Middle
-    G4double RingOD = RingMD + 6.85 * mm;
-    G4double SteelRingL = 8.0 * mm;
-    G4double RingL = 3.0 * mm;
-    G4VSolid* solidSteelRing = new G4Tubs("SteelRingS", RingID*0.5, RingMD*0.5, SteelRingL*0.5, 0, twopi);
-    G4LogicalVolume* logicSteelRing = new G4LogicalVolume(solidSteelRing, FlangeM2, "StellRingLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter), logicSteelRing, "StellRing", mother, false, 0);
-    G4VSolid* SolidRing = new G4Tubs("RingS", RingMD*0.5, RingOD*0.5, RingL*0.5, 0, twopi);
-    G4LogicalVolume* logicRing = new G4LogicalVolume(SolidRing, FlangeM3, "RingLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter), logicRing, "Ring", mother, false, 0);
+        auto Window1 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid.stl");//quick disconnect, 304 stainless steel
+        Window1->SetScale(1);											
+        Window1->SetOffset(0, 0, fTargetCenter + move);	//2085.7 - 6405.82 = -4959.12 mm								
+        G4LogicalVolume *logicalWindow1 = new G4LogicalVolume(Window1->GetSolid(), WindowAndTubeM2, "Window1LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow1, "Window1", mother, false, 0);
 
-    //flange tube
-    G4double FlangeOD = 55.0 * mm;
-    G4double FlangeID = 34.8 * mm;
-    G4double FlangeL = 4.0 * mm;
-    G4VSolid* solidFlangeTub = new G4Tubs("FlangeTube", FlangeID*0.5, FlangeOD*0.5, FlangeL*0.5, 0, twopi);
+        auto Window2 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid001.stl");//quick disconnect, 304 stainless steel
+        Window2->SetScale(1);											
+        Window2->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow2 = new G4LogicalVolume(Window2->GetSolid(), WindowAndTubeM2, "Window2LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow2, "Window2", mother, false, 0);
 
-    G4double BlankOD = 41.5 * mm;
-    G4double BlankL = 2.55 * mm;
-    G4VSolid* solidBlank = new G4Tubs("BlankS", 0., BlankOD*0.5, BlankL*0.5, 0, twopi);
+        auto Window3 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid002.stl");//formed bellows,300 stainless steel
+        Window3->SetScale(1);											
+        Window3->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow3 = new G4LogicalVolume(Window3->GetSolid(), WindowAndTubeM2, "Window3LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow3, "Window3", mother, false, 0);
 
-    G4SubtractionSolid* solidFlange1 = new G4SubtractionSolid("FlangeS1", solidFlangeTub, solidBlank, 0, G4ThreeVector(0, 0, -0.5*FlangeL+0.5*BlankL-0.05*mm));
-    G4LogicalVolume* logicFlange1 = new G4LogicalVolume(solidFlange1, FlangeM1, "Flange1LV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter+RingL*0.5+FlangeL*0.5+0.1*mm), logicFlange1, "Flange1", mother, false, 0);
+        auto Window4 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid003.stl");//KF flange Aluminum
+        Window4->SetScale(1);											
+        Window4->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow4 = new G4LogicalVolume(Window4->GetSolid(), WindowAndTubeM1, "Window4LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow4, "Window4", mother, false, 0);
 
-    G4SubtractionSolid* solidFlange2 = new G4SubtractionSolid("FlangeS2", solidFlangeTub, solidBlank, 0, G4ThreeVector(0, 0, 0.5*FlangeL-0.5*BlankL+0.05*mm));
-    G4LogicalVolume* logicFlange2 = new G4LogicalVolume(solidFlange2, FlangeM1, "Flange2LV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter-RingL*0.5-FlangeL*0.5-0.1*mm), logicFlange2, "Flange2", mother, false, 0);
+        auto Window5 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid004.stl");//
+        Window5->SetScale(1);											
+        Window5->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow5 = new G4LogicalVolume(Window5->GetSolid(), WindowAndTubeM1, "Window5LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow5, "Window5", mother, false, 0);
 
-    G4double FTubeOD = 38.1 * mm;
-    G4double FTubeID = 34.8 * mm;
-    G4double FTubeL = 34.6 * mm;
-    G4VSolid* solidFTube = new G4Tubs("FTubeS", FTubeID*0.5, FTubeOD*0.5, FTubeL*0.5, 0, twopi);
-    G4LogicalVolume* logicFTube = new G4LogicalVolume(solidFTube, FlangeM1, "FTubeLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter+RingL*0.5+FlangeL+FTubeL*0.5+0.2*mm), logicFTube, "FTube1", mother, false, 0);
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter-RingL*0.5-FlangeL-FTubeL*0.5-0.2*mm), logicFTube, "FTube2", mother, false, 0);
+        auto Window7 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid006.stl");//forming clamp,A36 steel
+        Window7->SetScale(1);											
+        Window7->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow7 = new G4LogicalVolume(Window7->GetSolid(), WindowAndTubeM2, "Window7LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow7, "Window7", mother, false, 0);
 
-    //Hing Clamp on flange
-    G4double HingTubeID = 49.0 * mm;
-    G4double HingTubeOD = 67.82 * mm;
-    G4double HingTubeL = 15.20 * mm;
-    G4double HingBlankTubeOD = FlangeOD + 1.0 * mm;
-    G4double HingBlankTubeL = RingL + FlangeL*2. + 1.*mm;
-    G4VSolid* solidHingTube = new G4Tubs("HingTubeS", HingTubeID*0.5, HingTubeOD*0.5, HingTubeL*0.5, 0, twopi);
-    G4VSolid* solidHingBlankTube = new G4Tubs("HingBlankTubeS", 0., HingBlankTubeOD*0.5, HingBlankTubeL*0.5, 0, twopi);
-    G4SubtractionSolid* solidHingClamp = new G4SubtractionSolid("HingClampS", solidHingTube, solidHingBlankTube, 0, G4ThreeVector(0, 0, 0));
-    G4LogicalVolume* logicHingClamp = new G4LogicalVolume(solidHingClamp, FlangeM1, "HingClampLV");
-    new G4PVPlacement(0, G4ThreeVector(0, 0, FlangeCenter), logicHingClamp, "HingClamp", mother, false, 0);
+        auto Window9 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid008.stl");//window adapter, aluminum
+        Window9->SetScale(1);											
+        Window9->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow9 = new G4LogicalVolume(Window9->GetSolid(), WindowAndTubeM1, "Window9LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow9, "Window9", mother, false, 0);
 
-    G4VSolid* solidClampBox = new G4Box("ClampBoxS", 24.*mm*0.5, 7.*mm*0.5, 15.2*mm*0.5);
-    G4LogicalVolume* logicClampBox = new G4LogicalVolume(solidClampBox, FlangeM1, "ClampBoXLV");
-    G4VSolid* solidClampBox2 = new G4Box("ClampBoxS2", 40.*mm*0.5, 7.*mm*0.5, 15.2*mm*0.5);
-    G4LogicalVolume* logicClampBox2 = new G4LogicalVolume(solidClampBox2, FlangeM1, "ClampBoX2LV");
-    new G4PVPlacement(0, G4ThreeVector(0, 7.*mm*0.5+HingTubeOD*0.5+1.0*mm, FlangeCenter), logicClampBox, "ClampBox1", mother, false, 0);
-    new G4PVPlacement(0, G4ThreeVector(0, -7.*mm*0.5-HingTubeOD*0.5-1.0*mm, FlangeCenter), logicClampBox2, "ClampBox2", mother, false, 0);
+        auto Window10 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid009.stl");//small window flange, aluminum
+        Window10->SetScale(1);											
+        Window10->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow10 = new G4LogicalVolume(Window10->GetSolid(), WindowAndTubeM1, "Window10LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow10, "Window10", mother, false, 0);
+
+        auto Window11 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid010.stl");//X17 small window, aluminum
+        Window11->SetScale(1);											
+        Window11->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow11 = new G4LogicalVolume(Window11->GetSolid(), WindowAndTubeM1, "Window11LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow11, "Window11", mother, false, 0);
+
+        auto Window12 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid011.stl");//window coupling nipple, aluminum
+        Window12->SetScale(1);											
+        Window12->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow12 = new G4LogicalVolume(Window12->GetSolid(), WindowAndTubeM1, "Window12LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow12, "Window12", mother, false, 0);
+
+        auto Window13 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid012.stl");//KF flange in window, aluminum
+        Window13->SetScale(1);											
+        Window13->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow13 = new G4LogicalVolume(Window13->GetSolid(), WindowAndTubeM1, "Window13LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow13, "Window13", mother, false, 0);
+
+        auto Window14 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid013.stl");//window coupling spacers, aluminum
+        Window14->SetScale(1);											
+        Window14->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow14 = new G4LogicalVolume(Window14->GetSolid(), WindowAndTubeM1, "Window14LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow14, "Window14", mother, false, 0);
+
+        auto Window15 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid014.stl");//viton
+        Window15->SetScale(1);											
+        Window15->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow15 = new G4LogicalVolume(Window15->GetSolid(), WindowAndTubeM3, "Window15LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow15, "Window15", mother, false, 0);
+
+        auto Window16 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid015.stl");//window coupling spacers, aluminum
+        Window16->SetScale(1);											
+        Window16->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow16 = new G4LogicalVolume(Window16->GetSolid(), WindowAndTubeM1, "Window16LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow16, "Window16", mother, false, 0);
+
+        auto Window17 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid016.stl");//window coupling nut, aluminum
+        Window17->SetScale(1);											
+        Window17->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow17 = new G4LogicalVolume(Window17->GetSolid(), WindowAndTubeM1, "Window17LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow17, "Window17", mother, false, 0);
+
+        auto Window18 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid017.stl");//viton in hinged clamp
+        Window18->SetScale(1);											
+        Window18->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow18 = new G4LogicalVolume(Window18->GetSolid(), WindowAndTubeM3, "Window18LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow18, "Window18", mother, false, 0);
+
+        auto Window19 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid018.stl");//hinged KF clamp, aluminum
+        Window19->SetScale(1);											
+        Window19->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow19 = new G4LogicalVolume(Window19->GetSolid(), WindowAndTubeM1, "Window19LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow19, "Window19", mother, false, 0);
+
+        auto Window20 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid019.stl");//hinged KF clamp, aluminum
+        Window20->SetScale(1);											
+        Window20->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow20 = new G4LogicalVolume(Window20->GetSolid(), WindowAndTubeM1, "Window20LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow20, "Window20", mother, false, 0);
+
+        auto Window21 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid020.stl");//hinged KF clamp, aluminum
+        Window21->SetScale(1);											
+        Window21->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow21 = new G4LogicalVolume(Window21->GetSolid(), WindowAndTubeM1, "Window21LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow21, "Window21", mother, false, 0);
+
+        auto Window22 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid021.stl");//hinged KF clamp, aluminum
+        Window22->SetScale(1);											
+        Window22->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow22 = new G4LogicalVolume(Window22->GetSolid(), WindowAndTubeM1, "Window22LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow22, "Window22", mother, false, 0);
+
+        auto Window23 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid022.stl");//hinged KF clamp, aluminum
+        Window23->SetScale(1);											
+        Window23->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow23 = new G4LogicalVolume(Window23->GetSolid(), WindowAndTubeM1, "Window23LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow23, "Window23", mother, false, 0);
+
+        auto Window24 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid023.stl");//hinged KF clamp, aluminum
+        Window24->SetScale(1);											
+        Window24->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow24 = new G4LogicalVolume(Window24->GetSolid(), WindowAndTubeM1, "Window24LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow24, "Window24", mother, false, 0);
+
+        G4cout<<"Using_small_vacuum_window_Not_using_HeBag"<<G4endl;
+    }
+
+    if(UseHeBag){
+        // He Bag
+        //dimension from Bob or Chris
+        G4double move = -1280. * mm; 
+        G4double VacTubeOR = 1.375 * 2.54 * cm * 0.5; 
+        G4double VacTubeIR = VacTubeOR - 0.075 * mm;
+        //G4double VacTubeL = 2387.6 * mm;
+        G4double VacTubeL = 2745. * mm;
+        G4VSolid *solidHeTube = new G4Tubs("VacuumTubeS", VacTubeIR, VacTubeOR, VacTubeL / 2.0, 0, twopi);
+        G4LogicalVolume *logicHeTube = new G4LogicalVolume(solidHeTube, HeTubeM, "HeTubeLV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, fTargetCenter + 7736.93 * mm + move), logicHeTube, "He Tube", mother, false, 0);
+        G4VSolid *solidHeGas = new G4Tubs("HeGasTubeS", 0, VacTubeIR, VacTubeL / 2.0, 0, twopi);
+        G4LogicalVolume *logicHeGas = new G4LogicalVolume(solidHeGas, TubeGasM, "HeGasLV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, fTargetCenter + 7736.93 * mm + move), logicHeGas, "He Gas", mother, false, 0);
+
+        G4VSolid *solidThickWindow = new G4Tubs("ThickWindowS", 7.5 * mm, 22.* mm, 0.55 * mm / 2.0, 0, twopi);
+        G4LogicalVolume *logicThickWindow = new G4LogicalVolume(solidThickWindow, VacuumBoxM, "Vacuum Window with hole");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, fTargetCenter + 6361.11 * mm + move), logicThickWindow, "Vacuum Window with hole", mother, false, 0);
+
+        G4VSolid *solidHoleWindow = new G4Tubs("HoleWindowS", 0, 17.5 * mm, 0.03 * mm / 2.0, 0, twopi);
+        G4LogicalVolume *logicHoleWindow = new G4LogicalVolume(solidHoleWindow, VacuumBoxM, "Vacuum Window Hole Window");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, fTargetCenter + 6361.11 * mm + 0.9 * mm + move), logicHoleWindow, "Vacuum Hole Window", mother, false, 0);
+
+        //imported from CAD
+        auto Window9 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid008.stl");//window adapter, aluminum
+        Window9->SetScale(1);											
+        Window9->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow9 = new G4LogicalVolume(Window9->GetSolid(), WindowAndTubeM1, "Window9LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow9, "Window9", mother, false, 0);
+
+        auto Window10 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid009.stl");//small window flange, aluminum
+        Window10->SetScale(1);											
+        Window10->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow10 = new G4LogicalVolume(Window10->GetSolid(), WindowAndTubeM1, "Window10LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow10, "Window10", mother, false, 0);
+
+        auto Window11 = CADMesh::TessellatedMesh::FromSTL("database/CADmodel/Solid010.stl");//X17 small window, aluminum
+        Window11->SetScale(1);											
+        Window11->SetOffset(0, 0, fTargetCenter + move);										
+        G4LogicalVolume *logicalWindow11 = new G4LogicalVolume(Window11->GetSolid(), WindowAndTubeM1, "Window11LV");
+        new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicalWindow11, "Window11", mother, false, 0);
+
+        G4cout<<"Using_small_vacuum_window_and_using_HeBag"<<G4endl;
+    }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -1027,15 +1213,28 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
     G4Material *GEMCu0d75M = G4Material::GetMaterial("Copper0.75");
     G4Material *GEMCu0d8M = G4Material::GetMaterial("Copper0.8");
     G4Material *GEMGlueM = G4Material::GetMaterial("Kapton"); // TODO: Add actual Glue material
+    //4-layer structure window
+    G4Material *GEMWinFoilM = G4Material::GetMaterial("Aluminum");
+    G4Material *GEMWinM_1st = G4Material::GetMaterial("Kapton");
+    G4Material *GEMWinM_2nd = G4Material::GetMaterial("Nomex");
+    G4Material *GEMWinM_3rd = G4Material::GetMaterial("Kapton");
+    G4Material *GEMWinM_4th = G4Material::GetMaterial("Aluminized_Kapton");
+
+    // GEM Foil
+    G4double GEMWinT = 50.0 * um;
+    GEMWinT = (50. + 3175. + 50. + 25.) * um + 25. * um;
+    G4double GEMFoilT = 50.0 * um;
+    G4double GEMCuT = 5.0 * um;
+    G4double GEMGlueT = 60.0 * um;
 
     // GEM
     G4double GEMCenter = fGEMCenter[layerid];
     G4double GEMGap = 3.971 * cm; // Gap between two GEM // 3.971 from Weizhi
     G4double GEMHalfX = 55.04 * cm / 2.0;
     G4double GEMHalfY = 122.88 * cm / 2.0;
-    G4double GEMHalfT = (15.0 * mm + 455.0 * um) / 2.0; // 2 * 25 + 5 + 50 (win) + 6 * 5 + 3 * 50 (foil) + 5 + 5 + 50 + 50 + 60 (readout)
+    G4double GEMHalfT = (15.0 * mm + 455.0 * um + 2.* 25. * um + 2.*25.*um + (3175. + 50. + 25.) * um * 2.) / 2.0; // 2 * 50 + 5 + 50 (win) + 6 * 5 + 3 * 50 (foil) + 5 + 5 + 50 + 50 + 60 (readout)
 
-    if (culess) GEMHalfT = (15.0 * mm + 410.0 * um) / 2.0; // 2 * 25 + 50 (win) + 3 * 50 (foil) + 50 + 50 + 60 (readout)
+    if (culess) GEMHalfT = (15.0 * mm + 410.0 * um + 2.*25.*um + 2.*25.*um + (3175. + 50. + 25.) * um * 2.) / 2.0; // 2 * 50 + 50 (win) + 3 * 50 (foil) + 50 + 50 + 60 (readout)
 
     G4double GEMSpacerWh = 0.3 * mm / 2.0;
     G4double GEMSpacerWv = 0.5 * mm / 2.0;
@@ -1066,8 +1265,14 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
     G4Box *GEMGasBox = new G4Box(Form("GEM%dGasBox", layerid), GEMHalfX, GEMHalfY, GEMHalfT);
     G4Box *GEMSubBox = new G4Box(Form("GEM%dSubBox", layerid), GEMCenterHalfXY, GEMCenterHalfXY, GEMHalfT + 0.1 * mm);
     G4SubtractionSolid *solidGEMGas = new G4SubtractionSolid(Form("GEM%dGasS", layerid), GEMGasBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
-    G4LogicalVolume *logicGEMGas = new G4LogicalVolume(solidGEMGas, GEMGasM, Form("GEM%dGasLV", layerid));
+    G4Box *GEMGasBox_drift = new G4Box(Form("GEM%dGasBox_Drift", layerid), GEMHalfX, GEMHalfY, 2.9999 * mm / 2.);
+    G4SubtractionSolid *solidGEMGas_other = new G4SubtractionSolid(Form("GEM%dGasS_other", layerid), solidGEMGas, GEMGasBox_drift, 0, G4ThreeVector(0, 0, GEMWinT+3.*mm+GEMFoilT+GEMCuT+1.5*mm-GEMHalfT));
+    G4LogicalVolume *logicGEMGas = new G4LogicalVolume(solidGEMGas_other, GEMGasM, Form("GEM%dGasLV", layerid));
     new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicGEMGas, Form("GEM %d Gas", layerid), logicGEM, false, 0);
+
+    G4Box *DriftGasBox = new G4Box(Form("GEM%dDriftGasBox", layerid), GEMHalfX, GEMHalfY, 2.9999 * mm / 2.0);
+    G4SubtractionSolid *solidDriftGas = new G4SubtractionSolid(Form("GEM%dDriftGasS", layerid), DriftGasBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicDriftGas = new G4LogicalVolume(solidDriftGas, GEMGasM, Form("GEM%dDriftGasLV", layerid));
 
     // GEM Frame
     G4Box *GEMFrameBox1 = new G4Box(Form("GEM%dFrameBox1", layerid), GEMHalfX + GEMFrameWidth, GEMHalfY + GEMFrameWidth * 2.0, GEMHalfT);
@@ -1095,14 +1300,35 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
     G4LogicalVolume *logicGEMSpacer = new G4LogicalVolume(solidGEMSpacer, GEMFrameM, Form("GEM%dSpacerLV", layerid));
 
     // GEM Foil
-    G4double GEMWinT = 25.0 * um;
-    G4double GEMFoilT = 50.0 * um;
-    G4double GEMCuT = 5.0 * um;
-    G4double GEMGlueT = 60.0 * um;
 
-    G4Box *GEMWinBox = new G4Box(Form("GEM%dWinBox", layerid), GEMHalfX, GEMHalfY, GEMWinT / 2.0);
-    G4SubtractionSolid *solidGEMWin = new G4SubtractionSolid(Form("GEM%dWinS", layerid), GEMWinBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
-    G4LogicalVolume *logicGEMWin = new G4LogicalVolume(solidGEMWin, GEMFoilM, Form("GEM%dWinLV", layerid));
+    //old pure kapton window
+    //G4Box *GEMWinBox = new G4Box(Form("GEM%dWinBox", layerid), GEMHalfX, GEMHalfY, GEMWinT / 2.0);
+    //G4SubtractionSolid *solidGEMWin = new G4SubtractionSolid(Form("GEM%dWinS", layerid), GEMWinBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    //G4LogicalVolume *logicGEMWin = new G4LogicalVolume(solidGEMWin, GEMFoilM, Form("GEM%dWinLV", layerid));
+
+    //new four-layer structure window
+    //1st, 50 um Kapton; 2nd 3mm Nomex Honeycomb; 3rd, 50 um Kapton; 4th, Aluminized-Kapton(5um Aluminum + 20um Kapton)
+    GEMWinT = (50. + 3175. + 50. + 25.) * um + 25. * um;
+    G4double GEMWinFoilT = 25. * um;
+    G4double GEMWinT_1st = 50. * um;
+    G4double GEMWinT_2nd = 3.175 * mm;
+    G4double GEMWinT_3rd = 50. * um;
+    G4double GEMWinT_4th = 25. * um;
+    G4Box *GEMWinFoilBox = new G4Box(Form("GEM%dWinFoilBox", layerid), GEMHalfX, GEMHalfY, GEMWinFoilT / 2.0);
+    G4SubtractionSolid *solidGEMWinFoil = new G4SubtractionSolid(Form("GEM%dWinS_1st", layerid), GEMWinFoilBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicGEMWinFoil = new G4LogicalVolume(solidGEMWinFoil, GEMWinFoilM, Form("GEM%dWinFoilLV", layerid));
+    G4Box *GEMWinBox_1st = new G4Box(Form("GEM%dWinBox_1st", layerid), GEMHalfX, GEMHalfY, GEMWinT_1st / 2.0);
+    G4SubtractionSolid *solidGEMWin_1st = new G4SubtractionSolid(Form("GEM%dWinS_1st", layerid), GEMWinBox_1st, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicGEMWin_1st = new G4LogicalVolume(solidGEMWin_1st, GEMWinM_1st, Form("GEM%dWin1stLV", layerid));
+    G4Box *GEMWinBox_2nd = new G4Box(Form("GEM%dWinBox_2nd", layerid), GEMHalfX, GEMHalfY, GEMWinT_2nd / 2.0);
+    G4SubtractionSolid *solidGEMWin_2nd = new G4SubtractionSolid(Form("GEM%dWinS_2nd", layerid), GEMWinBox_2nd, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicGEMWin_2nd = new G4LogicalVolume(solidGEMWin_2nd, GEMWinM_2nd, Form("GEM%dWin2ndLV", layerid));
+    G4Box *GEMWinBox_3rd = new G4Box(Form("GEM%dWinBox_3rd", layerid), GEMHalfX, GEMHalfY, GEMWinT_3rd / 2.0);
+    G4SubtractionSolid *solidGEMWin_3rd = new G4SubtractionSolid(Form("GEM%dWinS_3rd", layerid), GEMWinBox_3rd, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicGEMWin_3rd = new G4LogicalVolume(solidGEMWin_3rd, GEMWinM_3rd, Form("GEM%dWin3rdLV", layerid));
+    G4Box *GEMWinBox_4th = new G4Box(Form("GEM%dWinBox_4th", layerid), GEMHalfX, GEMHalfY, GEMWinT_4th / 2.0);
+    G4SubtractionSolid *solidGEMWin_4th = new G4SubtractionSolid(Form("GEM%dWinS_4th", layerid), GEMWinBox_4th, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
+    G4LogicalVolume *logicGEMWin_4th = new G4LogicalVolume(solidGEMWin_4th, GEMWinM_4th, Form("GEM%dWin4thLV", layerid));
 
     G4Box *GEMFoilBox = new G4Box(Form("GEM%dFoilBox", layerid), GEMHalfX, GEMHalfY, GEMFoilT / 2.0);
     G4SubtractionSolid *solidGEMFoil = new G4SubtractionSolid(Form("GEM%dFoilS", layerid), GEMFoilBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
@@ -1114,9 +1340,10 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
     G4Box *GEMCuBox = new G4Box(Form("GEM%dCuBox", layerid), GEMHalfX, GEMHalfY, GEMCuT / 2.0);
     G4SubtractionSolid *solidGEMCu = new G4SubtractionSolid(Form("GEM%dCuS", layerid), GEMCuBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
     G4LogicalVolume *logicGEMCu = new G4LogicalVolume(solidGEMCu, GEMCu0d8M, Form("GEM%dCuLV", layerid));
+    G4LogicalVolume *logicGEMCu_cathode = new G4LogicalVolume(solidGEMCu, GEMCu0d8M, Form("GEM%dCuReadLV2", layerid));
     G4LogicalVolume *logicGEMCu80 = new G4LogicalVolume(solidGEMCu, GEMCu0d2M, Form("GEM%dCu80LV", layerid));
     G4LogicalVolume *logicGEMCu350 = new G4LogicalVolume(solidGEMCu, GEMCu0d75M, Form("GEM%dCu350LV", layerid));
-    G4LogicalVolume *logicGEMCathodeCu = new G4LogicalVolume(solidGEMCu, GEMCuM, Form("GEM%dCathodeCuLV", layerid));
+    G4LogicalVolume *logicGEMCathodeCu = new G4LogicalVolume(solidGEMCu, GEMCuM, Form("GEM%dCuReadLV1", layerid));
 
     G4Box *GEMGlueBox = new G4Box(Form("GEM%dGlueBox", layerid), GEMHalfX, GEMHalfY, GEMGlueT / 2.0);
     G4SubtractionSolid *solidGEMGlue = new G4SubtractionSolid(Form("GEM%dGlueS", layerid), GEMGlueBox, GEMSubBox, 0, G4ThreeVector(-GEMCenterOffset, 0, 0));
@@ -1124,7 +1351,15 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
 
     G4double zoff = -GEMHalfT;
 
-    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinT / 2.0), logicGEMWin, Form("GEM %d Window", layerid), logicGEMGas, false, 0);
+    //old pure kapton window
+    //new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinT / 2.0), logicGEMWin, Form("GEM %d Window", layerid), logicGEMGas, false, 0);
+    
+    //4-layer sturcture win
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinFoilT / 2.0), logicGEMWinFoil, Form("GEM %d Window Aluminum Foil", layerid), logicGEMGas, false, 0);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinFoilT + GEMWinT_1st / 2.0), logicGEMWin_1st, Form("GEM %d Window1st", layerid), logicGEMGas, false, 0);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinFoilT + GEMWinT_1st + GEMWinT_2nd / 2.0), logicGEMWin_2nd, Form("GEM %d Window2nd", layerid), logicGEMGas, false, 0);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinFoilT + GEMWinT_1st + GEMWinT_2nd + GEMWinT_3rd / 2.0), logicGEMWin_3rd, Form("GEM %d Window3rd", layerid), logicGEMGas, false, 0);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMWinFoilT + GEMWinT_1st + GEMWinT_2nd + GEMWinT_3rd + GEMWinT_4th / 2.0), logicGEMWin_4th, Form("GEM %d Window4th", layerid), logicGEMGas, false, 0);
     zoff += GEMWinT;
 
     new G4PVPlacement(0, G4ThreeVector(-GEMSpacerOffset, 0, zoff + GEMSpacerT / 2.0), logicGEMSpacer, Form("GEM %d Spacer", layerid), logicGEMGas, false, 0);
@@ -1138,11 +1373,13 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
         zoff += GEMCuT;
     }
 
-    new G4PVPlacement(0, G4ThreeVector(-GEMSpacerOffset, 0, zoff + GEMSpacerT / 2.0), logicGEMSpacer, Form("GEM %d Spacer", layerid), logicGEMGas, false, 1);
+    //new G4PVPlacement(0, G4ThreeVector(-GEMSpacerOffset, 0, zoff + GEMSpacerT / 2.0), logicGEMSpacer, Form("GEM %d Spacer", layerid), logicGEMGas, false, 1);
     zoff += 3.0 * mm;
 
+    new G4PVPlacement(0, G4ThreeVector(0, 0, zoff - 3.0 * mm / 2.0), logicDriftGas, Form("GEM %d DriftGas", layerid), logicGEM, false, 0);
+
     if (!culess) {
-        new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMCuT / 2.0), logicGEMCu, Form("GEM %d Copper", layerid), logicGEMGas, false, 1);
+        new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMCuT / 2.0), logicGEMCu_cathode, Form("GEM %d Copper", layerid), logicGEMGas, false, 0);
         zoff += GEMCuT;
     }
 
@@ -1207,7 +1444,15 @@ void DetectorConstruction::AddGEM(G4LogicalVolume *mother, int layerid, bool cul
     new G4PVPlacement(0, G4ThreeVector(0, 0, zoff + GEMGlueT / 2.0), logicGEMGlue, Form("GEM %d Glue", layerid), logicGEMGas, false, 0);
     zoff += GEMGlueT;
 
-    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinT / 2.0), logicGEMWin, Form("GEM %d Window", layerid), logicGEMGas, false, 1);
+    //old pure kapton window
+    //new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinT / 2.0), logicGEMWin, Form("GEM %d Window", layerid), logicGEMGas, false, 1);
+    
+    //4-layer sturcture win
+    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinFoilT - GEMWinT_1st - GEMWinT_2nd - GEMWinT_3rd - GEMWinT_4th / 2.0), logicGEMWin_4th, Form("GEM %d Window4th", layerid), logicGEMGas, false, 1);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinFoilT - GEMWinT_1st - GEMWinT_2nd - GEMWinT_3rd / 2.0), logicGEMWin_3rd, Form("GEM %d Window3rd", layerid), logicGEMGas, false, 1);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinFoilT - GEMWinT_1st - GEMWinT_2nd / 2.0), logicGEMWin_2nd, Form("GEM %d Window2nd", layerid), logicGEMGas, false, 1);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinFoilT - GEMWinT_1st / 2.0), logicGEMWin_1st, Form("GEM %d Window1st", layerid), logicGEMGas, false, 1);
+    new G4PVPlacement(0, G4ThreeVector(0, 0, GEMHalfT - GEMWinFoilT / 2.0), logicGEMWinFoil, Form("GEM %d Window Aluminum Foil", layerid), logicGEMGas, false, 0);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -1381,7 +1626,8 @@ void DetectorConstruction::AddHyCal(G4LogicalVolume *mother)
     G4double VirtualDetZ = 0.01 * mm;
     //G4VSolid *solidVirtualDet1 = new G4Box("VirtualDetS1", 600*mm, 600*mm, VirtualDetZ);
     G4VSolid *solidVirtualDet1 = new G4Box("VirtualDetS1", 350*mm, 350*mm, VirtualDetZ);
-    G4VSolid *solidVirtualDet2 = new G4Tubs("VirtualDet2", 0, 1.95 * cm, 3.1 * cm, 0, twopi);
+    //G4VSolid *solidVirtualDet2 = new G4Tubs("VirtualDet2", 0, 1.95 * cm, 3.1 * cm, 0, twopi);
+    G4VSolid *solidVirtualDet2 = new G4Box("VirtualDet2", 4.07 * cm, 4.07 * cm, 2. * VirtualDetZ);
     
     G4SubtractionSolid *solidVirtualDetSub = new G4SubtractionSolid("solidVirtualDetSub", solidVirtualDet1, solidVirtualDet2);
     G4LogicalVolume *logicVirtualDet = new G4LogicalVolume(solidVirtualDetSub, VirtualDetM, "VirtualDetLV");
