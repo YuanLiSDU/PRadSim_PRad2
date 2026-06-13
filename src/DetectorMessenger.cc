@@ -106,9 +106,9 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction *det) : G4UImessenger(
 
     TargetMatCmd = new G4UIcmdWithAString("/pradsim/det/target/material", this);
     TargetMatCmd->SetGuidance("Choose a target material.");
-    TargetMatCmd->SetGuidance("  Choice : hydrogen, deuteron, LH2, Ta");
+    TargetMatCmd->SetGuidance("  Choice : hydrogen, deuteron, LH2, Ta, Carbon, C");
     TargetMatCmd->SetParameterName("targetm", false);
-    TargetMatCmd->SetCandidates("hydrogen deuteron LH2 Ta");
+    TargetMatCmd->SetCandidates("hydrogen deuteron LH2 Ta Carbon C");
 
     TargetDensityRatioCmd = new G4UIcmdWithADouble("/pradsim/det/target/densityratio", this);
     TargetDensityRatioCmd->SetGuidance("Set fTargetDensityRatio");

@@ -251,6 +251,12 @@ void DetectorConstruction::DefineMaterials()
     G4Material *H2Gas = new G4Material("H2Gas", density = fTargetDensityRatio * 0.47 / 760.0 * 273.15 / 19.5 * 0.08988 * mg / cm3, ncomponents = 1, kStateGas, 19.5 * kelvin, fTargetDensityRatio * 0.47 / 760.0 * atmosphere);
     H2Gas->AddElement(H, natoms = 2);
     fVisAtts[H2Gas->GetName()] = new G4VisAttributes(G4Colour::Cyan());
+
+    // Compact solid carbon target
+    G4Material *CarbonTarget = new G4Material("CarbonTarget", density = fTargetDensityRatio * 2.265 * g / cm3, ncomponents = 1, kStateSolid);
+    CarbonTarget->AddElement(C, natoms = 1);
+    fVisAtts[CarbonTarget->GetName()] = new G4VisAttributes(G4Colour::Gray());
+    fVisAtts[CarbonTarget->GetName()]->SetForceSolid(true);
     
     // Hydrogen liquid
     G4Material *H2Liquid = new G4Material("H2Liquid", density = fTargetDensityRatio * 70.80 * mg / cm3, ncomponents = 1, kStateLiquid, 20.0 * kelvin, fTargetDensityRatio * 1.135 * atmosphere);
@@ -486,6 +492,10 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
         TargetM = G4Material::GetMaterial("Tantalum");
         G4cout<<"using "<<fTargetHalfL*2.<<" mm long Tantalum target, with radius "<<fTargetR<<" mm"<<G4endl;
     }
+    else if (fTargetMat == "Carbon" || fTargetMat == "C") {
+        TargetM = G4Material::GetMaterial("CarbonTarget");
+        G4cout<<"using "<<fTargetHalfL*2.<<" mm long compact carbon target, with radius "<<fTargetR<<" mm"<<G4endl;
+    }
     else{
         G4cout<<"using "<<fTargetHalfL*2.<<" mm long gas hydrogen target, with radius "<<fTargetR<<" mm"<<G4endl;
     }
@@ -513,7 +523,7 @@ G4VPhysicalVolume *DetectorConstruction::DefinePRadVolumes()
         G4LogicalVolume* logicCell = new G4LogicalVolume(solidCell, TargetCellM, "TargetCellLV");
         new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicCell, "Target Cell", logicTargetCon, false, 0);
     }
-    else if (fTargetMat == "Ta"){
+    else if (fTargetMat == "Ta" || fTargetMat == "Carbon" || fTargetMat == "C"){
         //do nothing here
     }
     else{

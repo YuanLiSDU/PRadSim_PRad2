@@ -2,6 +2,7 @@
 /pradsim/det/target/densityratio 1
 
 #target material 'hydrogen' for gas hydrogen (default), 'LH2' for liquid hydrogen
+#"'C' for carbon, 1um in PRad2
 /pradsim/det/target/material hydrogen
 
 #radius of the target cell, in mm
@@ -20,10 +21,10 @@
 /pradsim/gun/gunpid e-
 
 #energy of the incident particle
-/pradsim/gun/ebeam 700 MeV
+/pradsim/gun/ebeam 3485 MeV
 
 #frequency of printing out current event number
-/pradsim/event/printmodulo 1000
+/pradsim/event/printmodulo 100000
 
 #turn it on for beam-on-target simulation, only record event if there is at least a hit on detector
 /pradsim/event/onlyrecordhits true
